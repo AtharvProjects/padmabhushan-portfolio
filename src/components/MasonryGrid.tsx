@@ -61,7 +61,8 @@ export function MasonryGrid({ images }: MasonryGridProps) {
   }, [selectedIndex, handleNext, handlePrev]);
 
   const getColumns = () => {
-    const cols: typeof images[] = Array.from({ length: columns }, () => []);
+    type ImageWithIndex = typeof images[0] & { originalIndex: number };
+    const cols: ImageWithIndex[][] = Array.from({ length: columns }, () => []);
     images.forEach((img, i) => {
       // Keep track of the original index to open the correct lightbox image
       cols[i % columns].push({ ...img, originalIndex: i });
