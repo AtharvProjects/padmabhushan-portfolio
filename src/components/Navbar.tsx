@@ -11,6 +11,8 @@ export function Navbar() {
               src="/gallery/Travel/harishchandragad/IMG20251228070142 (1).jpg" 
               alt="Profile" 
               className="w-full h-full object-cover object-[70%_60%] grayscale scale-150"
+              draggable={false}
+              onContextMenu={(e) => e.preventDefault()}
             />
           </div>
 

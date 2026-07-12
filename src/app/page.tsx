@@ -9,7 +9,10 @@ export default async function Home() {
   let heroImage = "/gallery/Travel/harishchandragad/IMG20251228070142 (1).jpg";
 
   return (
-    <div className="relative w-full h-[95vh] flex flex-col justify-start overflow-hidden pt-32 md:pt-40 lg:pt-48">
+    <div 
+      className="relative w-full h-[95vh] flex flex-col justify-start overflow-hidden pt-32 md:pt-40 lg:pt-48"
+      onContextMenu={(e) => e.preventDefault()}
+    >
       {/* Background Image */}
       <div 
         className="absolute inset-0 z-0 bg-cover"
