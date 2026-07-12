@@ -11,7 +11,6 @@ export default async function Home() {
   return (
     <div 
       className="relative w-full h-[95vh] flex flex-col justify-start overflow-hidden pt-32 md:pt-40 lg:pt-48"
-      onContextMenu={(e) => e.preventDefault()}
     >
       {/* Background Image */}
       <div 
