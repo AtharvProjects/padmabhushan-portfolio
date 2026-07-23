@@ -1,12 +1,9 @@
 import Link from "next/link";
 import * as motion from "framer-motion/client";
-import { getPhotos } from "@/lib/getPhotos";
 
 export default async function Home() {
-  const photoCategories = getPhotos();
-  
   // Use the mountain selfie image from harishchandragad as the background
-  let heroImage = "/gallery/Travel/harishchandragad/IMG20251228070142 (1).jpg";
+  const heroImage = "/gallery/Travel/harishchandragad/IMG20251228070142 (1).jpg";
 
   return (
     <div 
@@ -20,18 +17,15 @@ export default async function Home() {
           backgroundPosition: 'right 80%'
         }}
       />
-      
-      {/* Overlay removed to match original bright aesthetic, unless needed for readability */}
-      {/* <div className="absolute inset-0 z-0 bg-white/10" /> */}
 
       {/* Content */}
       <div className="relative z-10 w-full px-4 md:px-8">
-        <div className="max-w-lg">
+        <div>
           <motion.h1 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
-            className="text-[4.5rem] md:text-8xl lg:text-[7rem] font-serif text-[#2a211f] mb-4 leading-none tracking-tight"
+            className="text-4xl sm:text-6xl md:text-8xl lg:text-[7rem] font-serif text-[#2a211f] mb-4 leading-none tracking-tight whitespace-nowrap"
           >
             Padmabhushan
           </motion.h1>

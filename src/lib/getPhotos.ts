@@ -1,66 +1,137 @@
 import fs from 'fs';
 import path from 'path';
 
-export interface PhotoCategory {
-  title: string;
-  images: { id: string; src: string; alt: string }[];
+export interface PhotoItem {
+  id: string;
+  src: string;
+  alt: string;
 }
 
-export function getPhotos(): PhotoCategory[] {
+export interface SubCategory {
+  id: string;
+  title: string;
+  images: PhotoItem[];
+}
+
+export interface MainCategory {
+  id: string;
+  title: string;
+  subCategories: SubCategory[];
+  allImages: PhotoItem[];
+}
+
+function formatTitle(name: string): string {
+  const lower = name.toLowerCase().trim();
+  if (lower === 'human portraits') return 'Human Portraits';
+  if (lower === 'culture and documents') return 'Culture & Documents';
+  if (lower === 'pets and animals') return 'Pets & Animals';
+  if (lower === 'mai ghat satara') return 'Mai Ghat Satara';
+  if (lower === 'bagad bavdhan') return 'Bagad Bavdhan';
+  if (lower === 'kas plateau') return 'Kas Plateau';
+  if (lower === 'sandhan valley') return 'Sandhan Valley';
+  if (lower === 'raigad rajyabhishek') return 'Raigad Rajyabhishek';
+  if (lower === 'my best work') return 'My Best Work';
+
+  return name
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+}
+
+export function getPhotos(): MainCategory[] {
   const galleryDir = path.join(process.cwd(), 'public', 'gallery');
   
   if (!fs.existsSync(galleryDir)) {
     return [];
   }
 
-  const result: PhotoCategory[] = [];
-  
-  // Recursively find directories and their images
-  const findCategories = (dir: string, currentCategoryPath: string[]) => {
-    const files = fs.readdirSync(dir, { withFileTypes: true });
-    const imagesInThisDir: { id: string; src: string; alt: string }[] = [];
+  const mainDirEntries = fs.readdirSync(galleryDir, { withFileTypes: true });
+  const mainCategories: MainCategory[] = [];
+
+  for (const entry of mainDirEntries) {
+    if (!entry.isDirectory()) continue;
+
+    const mainCategoryName = entry.name;
+    const mainFolderPath = path.join(galleryDir, mainCategoryName);
+
+    const subDirEntries = fs.readdirSync(mainFolderPath, { withFileTypes: true });
     
-    for (const file of files) {
-      if (file.isDirectory()) {
-        findCategories(path.join(dir, file.name), [...currentCategoryPath, file.name]);
-      } else {
-        if (/\.(jpg|jpeg|png|gif|webp)$/i.test(file.name)) {
-          const imgPath = path.join(dir, file.name);
-          const relativePath = path.relative(path.join(process.cwd(), 'public'), imgPath);
-          const publicUrl = `/${relativePath.replace(/\\/g, '/')}`;
-          
-          imagesInThisDir.push({
-            id: publicUrl,
-            src: publicUrl,
-            alt: file.name
+    const subCategories: SubCategory[] = [];
+    const directImages: PhotoItem[] = [];
+
+    for (const subEntry of subDirEntries) {
+      const subPath = path.join(mainFolderPath, subEntry.name);
+
+      if (subEntry.isDirectory()) {
+        const imageFiles = fs.readdirSync(subPath, { withFileTypes: true });
+        const subImages: PhotoItem[] = [];
+
+        for (const imgFile of imageFiles) {
+          if (!imgFile.isDirectory() && /\.(jpg|jpeg|png|gif|webp)$/i.test(imgFile.name)) {
+            const relativePath = path.relative(path.join(process.cwd(), 'public'), path.join(subPath, imgFile.name));
+            const publicUrl = `/${relativePath.replace(/\\/g, '/')}`;
+            subImages.push({
+              id: publicUrl,
+              src: publicUrl,
+              alt: imgFile.name
+            });
+          }
+        }
+
+        if (subImages.length > 0) {
+          subCategories.push({
+            id: subEntry.name.toLowerCase().replace(/\s+/g, '-'),
+            title: formatTitle(subEntry.name),
+            images: subImages
           });
         }
+      } else if (/\.(jpg|jpeg|png|gif|webp)$/i.test(subEntry.name)) {
+        const relativePath = path.relative(path.join(process.cwd(), 'public'), subPath);
+        const publicUrl = `/${relativePath.replace(/\\/g, '/')}`;
+        directImages.push({
+          id: publicUrl,
+          src: publicUrl,
+          alt: subEntry.name
+        });
       }
     }
-    
-    if (imagesInThisDir.length > 0) {
-      // Format title like "Travel / Raigad Rajyabhishek" or just "Engineering"
-      const title = currentCategoryPath.map(p => 
-        p.charAt(0).toUpperCase() + p.slice(1) // capitalize
-      ).join(' / ');
-      
-      result.push({
-        title: title || 'Other',
-        images: imagesInThisDir
+
+    // Sort subcategories for Photography & Travel
+    if (mainCategoryName.toLowerCase() === 'photography') {
+      subCategories.sort((a, b) => {
+        if (a.title === 'My Best Work') return -1;
+        if (b.title === 'My Best Work') return 1;
+        return a.title.localeCompare(b.title);
+      });
+    } else {
+      subCategories.sort((a, b) => a.title.localeCompare(b.title));
+    }
+
+    const allImages = [
+      ...directImages,
+      ...subCategories.flatMap(sc => sc.images)
+    ];
+
+    if (allImages.length > 0) {
+      mainCategories.push({
+        id: mainCategoryName.toLowerCase(),
+        title: formatTitle(mainCategoryName),
+        subCategories,
+        allImages
       });
     }
-  };
+  }
 
-  findCategories(galleryDir, []);
-
-  // Sort so that "Best Work" comes first
-  result.sort((a, b) => {
-    const aIsBest = a.title.toLowerCase().includes("best work");
-    const bIsBest = b.title.toLowerCase().includes("best work");
-    if (aIsBest && !bIsBest) return -1;
-    if (!aIsBest && bIsBest) return 1;
+  // Desired main category order: Padmabhushan, Photography, Travel
+  const preferredOrder = ['padmabhushan', 'photography', 'travel'];
+  mainCategories.sort((a, b) => {
+    const idxA = preferredOrder.indexOf(a.id);
+    const idxB = preferredOrder.indexOf(b.id);
+    if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+    if (idxA !== -1) return -1;
+    if (idxB !== -1) return 1;
     return a.title.localeCompare(b.title);
   });
 
-  return result;
+  return mainCategories;
 }
